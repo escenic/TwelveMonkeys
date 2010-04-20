@@ -80,7 +80,7 @@ public class ImageServletResponseImplTestCase {
         doAnswer(mockLogger).when(context).log(any(Exception.class), anyString());
     }
 
-    private void fakeResponse(HttpServletRequest pRequest, ImageServletResponseImpl pImageResponse) throws IOException {
+    private void fakeResponse(HttpServletRequest pRequest, DefaultImageServletResponse pImageResponse) throws IOException {
         String uri = pRequest.getRequestURI();
         int index = uri.lastIndexOf('/');
         assertTrue(uri, index >= 0);
