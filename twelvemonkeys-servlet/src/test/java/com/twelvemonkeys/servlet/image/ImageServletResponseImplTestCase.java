@@ -65,7 +65,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mContext = (ServletContext) mockContext.proxy();
     }
 
-    private void fakeResponse(HttpServletRequest pRequest, DefaultImageServletResponse pImageResponse) throws IOException {
+    private void fakeResponse(HttpServletRequest pRequest, ImageServletResponseImpl pImageResponse) throws IOException {
         String uri = pRequest.getRequestURI();
         int index = uri.lastIndexOf('/');
         assertTrue(uri, index >= 0);
@@ -102,7 +102,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
         fakeResponse(mRequest, imageResponse);
 
         // Make sure image is correctly loaded
@@ -133,7 +133,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
         fakeResponse(mRequest, imageResponse);
 
         // TODO: Is there a way we can avoid calling flush?
@@ -154,7 +154,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
         fakeResponse(mRequest, imageResponse);
 
         // Force transcode to JPEG
@@ -209,7 +209,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Force transcode to JPEG
@@ -293,7 +293,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
         fakeResponse(mRequest, imageResponse);
 
         // Make sure image is correctly loaded
@@ -338,7 +338,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("sendError").with(eq(404), ANYTHING);
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
         fakeResponse(mRequest, imageResponse);
     }
 
@@ -357,7 +357,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         Mock mockResponse = mock(HttpServletResponse.class);
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
 
         fakeResponse(mRequest, imageResponse);
         try {
@@ -384,7 +384,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         Mock mockResponse = mock(HttpServletResponse.class);
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(mRequest, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(mRequest, response, mContext);
 
         fakeResponse(mRequest, imageResponse);
         try {
@@ -430,7 +430,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -469,7 +469,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -511,7 +511,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -574,7 +574,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -658,7 +658,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -708,7 +708,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -750,7 +750,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -802,7 +802,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -845,7 +845,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -906,7 +906,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
@@ -971,7 +971,7 @@ public class ImageServletResponseImplTestCase extends MockObjectTestCase {
         mockResponse.expects(once()).method("getOutputStream").will(returnValue(new OutputStreamAdapter(out)));
         HttpServletResponse response = (HttpServletResponse) mockResponse.proxy();
 
-        DefaultImageServletResponse imageResponse = new DefaultImageServletResponse(request, response, mContext);
+        ImageServletResponseImpl imageResponse = new ImageServletResponseImpl(request, response, mContext);
         fakeResponse(request, imageResponse);
 
         // Make sure image is correctly loaded
