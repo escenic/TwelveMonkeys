@@ -603,7 +603,7 @@ class ImageServletResponseImpl extends HttpServletResponseWrapper implements Ima
 
             AreaOfInterest areaOfInterest = AreaOfInterestFactory.getDefault().
                     createAreaOfInterest(pDefaultWidth, pDefaultHeight, aoiPercent, aoiUniform);
-            aoi = areaOfInterest.getAOI(aoiX, aoiY, aoiW, aoiH);
+            aoi = areaOfInterest.getAOI(new Rectangle(aoiX, aoiY, aoiW, aoiH));
             return aoi;
         }
 
