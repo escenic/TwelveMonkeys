@@ -130,11 +130,11 @@ public abstract class ImageFilter extends GenericFilter {
                         String etag = "W/\"" + Integer.toHexString(hashCode()) + "-" + Integer.toHexString(image.hashCode()) + "\"";
                         ((ImageServletResponseImpl) imageResponse).setHeader("ETag", etag);
                         ((ImageServletResponseImpl) imageResponse).setDateHeader("Last-Modified", (System.currentTimeMillis() / 1000) * 1000);
-                        imageResponse.flush();
                     }
                     //System.out.println("Done encoding.");
                 }
             }
+            imageResponse.flush();
         }
         //System.out.println("Filtering done.");
     }

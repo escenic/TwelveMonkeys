@@ -189,14 +189,14 @@ class ImageServletResponseImpl extends HttpServletResponseWrapper implements Ima
             getImage();
         }
 
-        // For known formats that don't support transparency, convert to opaque
-        if (("image/jpeg".equals(outputType) || "image/jpg".equals(outputType)
-                || "image/bmp".equals(outputType) || "image/x-bmp".equals(outputType)) &&
-                mImage.getColorModel().getTransparency() != Transparency.OPAQUE) {
-            mImage = ImageUtil.toBuffered(mImage, BufferedImage.TYPE_INT_RGB);
-        }
-
         if (mImage != null) {
+            // For known formats that don't support transparency, convert to opaque
+            if (("image/jpeg".equals(outputType) || "image/jpg".equals(outputType)
+                 || "image/bmp".equals(outputType) || "image/x-bmp".equals(outputType)) &&
+                 mImage.getColorModel().getTransparency() != Transparency.OPAQUE) {
+                mImage = ImageUtil.toBuffered(mImage, BufferedImage.TYPE_INT_RGB);
+            }
+
             Iterator writers = ImageIO.getImageWritersByMIMEType(outputType);
             if (writers.hasNext()) {
                 super.setContentType(outputType);
@@ -236,12 +236,14 @@ class ImageServletResponseImpl extends HttpServletResponseWrapper implements Ima
         }
         else {
             super.setContentType(mOriginalContentType);
-            ServletOutputStream out = super.getOutputStream();
-            try {
-                mBufferedOut.writeTo(out);
-            }
-            finally {
-                out.flush();
+            if(mBufferedOut != null) {
+                ServletOutputStream out = super.getOutputStream();
+                try {
+                    mBufferedOut.writeTo(out);
+                }
+                finally {
+                    out.flush();
+                }
             }
         }
     }
