@@ -128,7 +128,7 @@ public abstract class ImageFilter extends GenericFilter {
                     ((HttpServletResponse) pResponse).setDateHeader("Last-Modified", (System.currentTimeMillis() / 1000) * 1000);
                     }
 
-                imageResponse.flush();
+                    imageResponse.flush();
                     //System.out.println("Done encoding.");
                 }
             }
