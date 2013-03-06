@@ -427,14 +427,13 @@ class ImageServletResponseImpl extends HttpServletResponseWrapper implements Ima
         if (image != null && size != null && (image.getWidth() != size.width || image.getHeight() != size.height)) {
             int resampleAlgorithm = getResampleAlgorithmFromRequest();
 
-            // NOTE: Only use createScaled if IndexColorModel, as it's more expensive due to color conversion
-            if (image.getColorModel() instanceof IndexColorModel) {
-                return ImageUtil.createScaled(image, size.width, size.height, resampleAlgorithm);
-            }
-            else {
-                return ImageUtil.createResampled(image, size.width, size.height, resampleAlgorithm);
-            }
-        }
+          if (image.getColorModel() instanceof IndexColorModel) {
+            BufferedImage resampled = ImageUtil.createResampled(image, size.width, size.height, resampleAlgorithm);
+            return ImageUtil.createIndexed(resampled, (IndexColorModel) image.getColorModel(), null, ImageUtil.DITHER_NONE | ImageUtil.TRANSPARENCY_BITMASK);
+          }
+          else {
+            return ImageUtil.createResampled(image, size.width, size.height, resampleAlgorithm);
+          }        }
         return image;
     }
 
