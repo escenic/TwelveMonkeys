@@ -719,23 +719,6 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1) & 0xffffff);
     }
 
-    @Test
-    public void testXDensityOutOfRangeIssue() throws IOException {
-        // Image has JFIF with x/y density 0
-        JPEGImageReader reader = createReader();
-        reader.setInput(ImageIO.createImageInputStream(getClassLoaderResource("/jpeg/xdensity-out-of-range-zero.jpg")));
-
-        IIOMetadata imageMetadata = reader.getImageMetadata(0);
-        assertNotNull(imageMetadata);
-
-        // Assume that the aspect ratio is 1 if both x/y density is 0.
-        IIOMetadataNode tree = (IIOMetadataNode) imageMetadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
-        NodeList dimensions = tree.getElementsByTagName("Dimension");
-        assertEquals(1, dimensions.getLength());
-        assertEquals("PixelAspectRatio", dimensions.item(0).getFirstChild().getNodeName());
-        assertEquals("1.0", ((Element) dimensions.item(0).getFirstChild()).getAttribute("value"));
-    }
-
     // TODO: Test RGBA/YCbCrA handling
 
     @Test
