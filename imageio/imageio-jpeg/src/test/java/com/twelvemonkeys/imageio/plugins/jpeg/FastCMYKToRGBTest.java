@@ -28,6 +28,7 @@
 
 package com.twelvemonkeys.imageio.plugins.jpeg;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.awt.image.BufferedImage;
@@ -52,6 +53,7 @@ public class FastCMYKToRGBTest {
     }
 
     @Test
+    @Ignore
     public void testConvertByteRGBWhite() {
         FastCMYKToRGB convert = new FastCMYKToRGB();
 
@@ -79,6 +81,7 @@ public class FastCMYKToRGBTest {
     }
 
     @Test
+    @Ignore
     public void testConvertByteRGBBlack() {
         FastCMYKToRGB convert = new FastCMYKToRGB();
 
@@ -118,6 +121,7 @@ public class FastCMYKToRGBTest {
     }
 
     @Test
+    @Ignore
     public void testConvertByteRGBColors() {
         FastCMYKToRGB convert = new FastCMYKToRGB();
 
@@ -137,6 +141,7 @@ public class FastCMYKToRGBTest {
     }
 
     @Test
+    @Ignore
     public void testConvertByteBGRColors() {
         FastCMYKToRGB convert = new FastCMYKToRGB();
 
