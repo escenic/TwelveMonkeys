@@ -129,7 +129,12 @@ public class ThumbsDBImageReaderTestCase extends ImageReaderAbstractTestCase<Thu
             System.err.println("WARNING: Test skipped due to known bug in Java 1.5, please test again with Java 6 or later");
         }
     }
-
+    @Test
+    @Override
+    @Ignore  
+    public void testSetDestinationIllegal() throws IOException {
+    }
+    
     @Test
     @Override
     public void testSetDestinationType() throws IOException {
