@@ -1200,4 +1200,83 @@ public class ImageServletResponseImplTestCase {
         verify(response).getOutputStream();
         verify(response).setContentType(CONTENT_TYPE_PNG);
     }
+    private static class BlackLabel extends JLabel {
+        private final Paint checkeredBG;
+        private boolean opaque = true;
+
+        public BlackLabel(final String text, final BufferedImage outImage) {
+            super(text, new BufferedImageIcon(outImage), JLabel.CENTER);
+            setOpaque(true);
+            setBackground(Color.BLACK);
+            setForeground(Color.WHITE);
+            setVerticalAlignment(JLabel.CENTER);
+            setVerticalTextPosition(JLabel.BOTTOM);
+            setHorizontalTextPosition(JLabel.CENTER);
+
+            checkeredBG = createTexture();
+        }
+
+        @Override
+        public boolean isOpaque() {
+            return opaque && super.isOpaque();
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g = (Graphics2D) graphics;
+
+            int iconHeight = getIcon() == null ? 0 : getIcon().getIconHeight() + getIconTextGap();
+
+            // Paint checkered bg behind icon
+            g.setPaint(checkeredBG);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            // Paint black bg behind text
+            g.setColor(getBackground());
+            g.fillRect(0, iconHeight, getWidth(), getHeight() - iconHeight);
+
+            try {
+                opaque = false;
+                super.paintComponent(g);
+            }
+            finally {
+                opaque = true;
+            }
+        }
+
+        private static Paint createTexture() {
+            GraphicsConfiguration graphicsConfiguration = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+            BufferedImage pattern = graphicsConfiguration.createCompatibleImage(20, 20);
+            Graphics2D g = pattern.createGraphics();
+            try {
+                g.setColor(Color.LIGHT_GRAY);
+                g.fillRect(0, 0, pattern.getWidth(), pattern.getHeight());
+                g.setColor(Color.GRAY);
+                g.fillRect(0, 0, pattern.getWidth() / 2, pattern.getHeight() / 2);
+                g.fillRect(pattern.getWidth() / 2, pattern.getHeight() / 2, pattern.getWidth() / 2, pattern.getHeight() / 2);
+            }
+            finally {
+                g.dispose();
+            }
+
+            return new TexturePaint(pattern, new Rectangle(pattern.getWidth(), pattern.getHeight()));
+        }
+    }
+
+    private static class MockLogger implements Answer<Void> {
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+            // either log(String), log(String, Throwable) or log(Exception, String)
+            Object[] arguments = invocation.getArguments();
+
+            String msg = (String) (arguments[0] instanceof String ? arguments[0] : arguments[1]);
+            Throwable t = (Throwable) (arguments[0] instanceof Exception ? arguments[0] : arguments.length > 1 ? arguments[1] : null);
+
+            System.out.println("mock-context: " + msg);
+            if (t != null) {
+                t.printStackTrace(System.out);
+            }
+
+            return null;
+        }
+    }
 }
