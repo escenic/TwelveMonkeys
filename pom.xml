@@ -44,9 +44,9 @@
     </contributors>
 
     <scm>
-        <connection>scm:git:https://github.com/haraldk/TwelveMonkeys</connection>
-        <developerConnection>scm:git:https://github.com/haraldk/TwelveMonkeys</developerConnection>
-        <url>https://github.com/haraldk/TwelveMonkeys</url>
+        <connection>scm:git:https://github.com/escenic/TwelveMonkeys</connection>
+        <developerConnection>scm:git:https://github.com/escenic/TwelveMonkeys</developerConnection>
+        <url>https://github.com/escenic/TwelveMonkeys</url>
       <tag>twelvemonkeys-3.0.2</tag>
   </scm>
 
