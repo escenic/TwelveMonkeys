@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
     <groupId>com.twelvemonkeys</groupId>
     <artifactId>twelvemonkeys</artifactId>
     <version>3.0.2-ece-1-SNAPSHOT</version>
@@ -40,6 +43,17 @@
         </contributor>
     </contributors>
 
+    <scm>
+        <connection>scm:git:https://github.com/haraldk/TwelveMonkeys</connection>
+        <developerConnection>scm:git:https://github.com/haraldk/TwelveMonkeys</developerConnection>
+        <url>https://github.com/haraldk/TwelveMonkeys</url>
+      <tag>twelvemonkeys-3.0.2</tag>
+  </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <build>
         <finalName>twelvemonkeys-${project.artifactId}-${project.version}</finalName>
         <plugins>
@@ -52,11 +66,27 @@
                             <Implementation-Title>twelvemonkeys-${project.artifactId}</Implementation-Title>
                             <Implementation-Vendor>TwelveMonkeys</Implementation-Vendor>
                             <Implementation-Version>${project.version}</Implementation-Version>
-                            <Implementation-URL>http://github.com/haraldk/TwelveMonkeys</Implementation-URL>
+                            <Implementation-URL>${project.scm.url}</Implementation-URL>
                         </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <inherited>true</inherited>
+                <executions>
+                     <execution>
+                         <phase>package</phase>
+                         <id>attach-sources</id>
+                         <goals>
+                             <goal>jar</goal>
+                             <goal>test-jar</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>
         </plugins>
 
         <pluginManagement>
@@ -64,6 +94,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.5</version>
                     <configuration>
                         <encoding>UTF-8</encoding>
                     </configuration>
@@ -71,7 +102,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.2</version>
+                    <version>2.4</version>
                     <inherited>true</inherited>
                     <executions>
                         <execution>
@@ -85,28 +116,24 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.9.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <inherited>true</inherited>
-                    <!-- THIS DOES NOT WORK..?! -->
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <id>attach-sources</id>
-                            <goals>
-                                <goal>jar</goal>
-                                <goal>test-jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
+                    <version>2.2.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.3.2</version>
                     <inherited>true</inherited>
                     <configuration>
                         <source>1.5</source>
                         <target>1.5</target>
-                        <showDeprecation>true</showDeprecation>
+                        <showDeprecation>false</showDeprecation>
+                        <compilerArgument>-g:lines</compilerArgument>
                         <compilerArguments>
                             <encoding>iso-8859-1</encoding>
                         </compilerArguments>
@@ -116,6 +143,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.10</version>
                     <configuration>
                         <systemProperties>
                             <property>
@@ -137,17 +165,22 @@
                         <downloadSources>true</downloadSources>
                     </configuration>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.4.2</version>
+                    <dependencies>
+                      <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-provider-gitexe</artifactId>
+                        <version>1.9</version>
+                      </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
 
         </pluginManagement>
-
-        <extensions>
-            <extension>
-                <groupId>org.jvnet.wagon-svn</groupId>
-                <artifactId>wagon-svn</artifactId>
-                <version>1.9</version>
-            </extension>
-        </extensions>
 
     </build>
 
@@ -156,18 +189,22 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.16</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
+                <version>2.6</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.0.1</version>
                 <configuration>
                     <targetJdk>1.5</targetJdk>
                 </configuration>
@@ -175,18 +212,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.10</version>
             </plugin>
         </plugins>
     </reporting>
-
-    <repositories>
-        <repository>
-            <id>maven2-repository.dev.java.net</id>
-            <name>Java.net Repository for Maven</name>
-            <url>http://download.java.net/maven/2/</url>
-            <layout>default</layout>
-        </repository>
-    </repositories>
 
     <distributionManagement>
         <repository>

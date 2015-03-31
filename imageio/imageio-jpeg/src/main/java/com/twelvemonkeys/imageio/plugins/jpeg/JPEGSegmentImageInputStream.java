@@ -89,16 +89,34 @@ final class JPEGSegmentImageInputStream extends ImageInputStreamImpl {
             // Scan forward
             while (true) {
                 long realPosition = stream.getStreamPosition();
-                int marker = stream.readUnsignedShort();
+
+                int trash = 0;
+                int marker = stream.readUnsignedByte();
+
+                // Skip bad padding before the marker
+                while (marker != 0xff) {
+                    marker = stream.readUnsignedByte();
+                    trash++;
+                    realPosition++;
+                }
+
+                if (trash != 0) {
+                    // NOTE: We previously allowed these bytes to pass through to the native reader, as it could cope
+                    // and issued the correct warning. However, the native metadata chokes on it, so we'll mask it out.
+                    // TODO: Issue warning from the JPEGImageReader, telling how many bytes we skipped
+                }
+
+                marker = 0xff00 | stream.readUnsignedByte();
 
                 // Skip over 0xff padding between markers
                 while (marker == 0xffff) {
                     realPosition++;
-                    marker = (marker & 0xff) << 8 | stream.readUnsignedByte();
+                    marker = 0xff00 | stream.readUnsignedByte();
                 }
 
+                // TODO: Optionally skip JFIF only for non-JFIF conformant streams
                 // TODO: Refactor to make various segments optional, we probably only want the "Adobe" APP14 segment, 'Exif' APP1 and very few others
-                if (isAppSegmentMarker(marker) && marker != JPEG.APP0 && !(marker == JPEG.APP1 && isAppSegmentWithId("Exif", stream)) && marker != JPEG.APP14) {
+                if (isAppSegmentMarker(marker) && !(marker == JPEG.APP1 && isAppSegmentWithId("Exif", stream)) && marker != JPEG.APP14) {
                     int length = stream.readUnsignedShort(); // Length including length field itself
                     stream.seek(realPosition + 2 + length);  // Skip marker (2) + length
                 }

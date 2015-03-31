@@ -30,11 +30,12 @@ package com.twelvemonkeys.image;
 
 import javax.imageio.ImageTypeSpecifier;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.SampleModel;
+import java.awt.image.*;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.UndeclaredThrowableException;
 
 /**
  * A factory for creating {@link BufferedImage}s backed by memory mapped files.
@@ -49,6 +50,10 @@ public final class MappedImageFactory {
 
     // TODO: Create a way to do ColorConvertOp (or other color space conversion) on these images. 
     // - Current implementation of CCOp delegates to internal sun.awt classes that assumes java.awt.DataBufferByte for type byte buffers :-/
+    // - Might be possible (but slow) to copy parts to memory and do CCOp on these copies
+
+    private static final boolean DEBUG = "true".equalsIgnoreCase(System.getProperty("com.twelvemonkeys.image.mapped.debug"));
+    static final RasterFactory RASTER_FACTORY = createRasterFactory();
 
     private MappedImageFactory() {}
 
@@ -58,7 +63,6 @@ public final class MappedImageFactory {
     }
 
     public static BufferedImage createCompatibleMappedImage(int width, int height, GraphicsConfiguration configuration, int transparency) throws IOException {
-        // TODO: Should we also use the sample model?
         return createCompatibleMappedImage(width, height, configuration.getColorModel(transparency));
     }
 
@@ -73,6 +77,88 @@ public final class MappedImageFactory {
     static BufferedImage createCompatibleMappedImage(int width, int height, SampleModel sm, ColorModel cm) throws IOException {
         DataBuffer buffer = MappedFileBuffer.create(sm.getTransferType(), width * height * sm.getNumDataElements(), 1);
 
-        return new BufferedImage(cm, new GenericWritableRaster(sm, buffer, new Point()), cm.isAlphaPremultiplied(), null);
+        return new BufferedImage(cm, RASTER_FACTORY.createRaster(sm, buffer, new Point()), cm.isAlphaPremultiplied(), null);
+    }
+
+    private static RasterFactory createRasterFactory() {
+        try {
+            // Try to instantiate, will throw LinkageError if it fails
+            return new SunRasterFactory();
+        }
+        catch (LinkageError e) {
+            if (DEBUG) {
+                e.printStackTrace();
+            }
+
+            System.err.println("Could not instantiate SunWritableRaster, falling back to GenericWritableRaster.");
+        }
+
+        // Fall back
+        return new GenericRasterFactory();
+    }
+
+    static interface RasterFactory {
+        WritableRaster createRaster(SampleModel model, DataBuffer buffer, Point origin);
+    }
+
+    /**
+     * Generic implementation that should work for any JRE, and creates a custom subclass of {@link WritableRaster}.
+     */
+    static final class GenericRasterFactory implements RasterFactory {
+        public WritableRaster createRaster(final SampleModel model, final DataBuffer buffer, final Point origin) {
+            return new GenericWritableRaster(model, buffer, origin);
+        }
+    }
+
+    /**
+     * Sun/Oracle JRE-specific implementation that creates {@code sun.awt.image.SunWritableRaster}.
+     * Callers must catch {@link LinkageError}.
+     */
+    static final class SunRasterFactory implements RasterFactory {
+        final private Constructor<WritableRaster> factoryMethod = getFactoryMethod();
+
+        @SuppressWarnings("unchecked")
+        private static Constructor<WritableRaster> getFactoryMethod() {
+            try {
+                Class<?> cls = Class.forName("sun.awt.image.SunWritableRaster");
+
+                if (Modifier.isAbstract(cls.getModifiers())) {
+                    throw new IncompatibleClassChangeError("sun.awt.image.SunWritableRaster has become abstract and can't be instantiated");
+                }
+
+                return (Constructor<WritableRaster>) cls.getConstructor(SampleModel.class, DataBuffer.class, Point.class);
+            }
+            catch (ClassNotFoundException e) {
+                throw new NoClassDefFoundError(e.getMessage());
+            }
+            catch (NoSuchMethodException e) {
+                throw new NoSuchMethodError(e.getMessage());
+            }
+        }
+
+        public WritableRaster createRaster(final SampleModel model, final DataBuffer buffer, final Point origin) {
+            try {
+                return factoryMethod.newInstance(model, buffer, origin);
+            }
+            catch (InstantiationException e) {
+                throw new Error("Could not create SunWritableRaster: ", e); // Should never happen, as we test for abstract class
+            }
+            catch (IllegalAccessException e) {
+                throw new Error("Could not create SunWritableRaster: ", e); // Should never happen, only public constructors are reflected
+            }
+            catch (InvocationTargetException e) {
+                // Unwrap to allow normal exception flow
+                Throwable cause = e.getCause();
+
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                }
+                else if (cause instanceof Error) {
+                    throw (Error) cause;
+                }
+
+                throw new UndeclaredThrowableException(cause);
+            }
+        }
     }
 }

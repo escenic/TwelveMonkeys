@@ -29,24 +29,32 @@
 package com.twelvemonkeys.imageio.plugins.jpeg;
 
 import com.twelvemonkeys.imageio.util.ImageReaderAbstractTestCase;
+import org.hamcrest.core.IsInstanceOf;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.internal.matchers.GreaterThan;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-import javax.imageio.IIOException;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReadParam;
-import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.*;
 import javax.imageio.event.IIOReadWarningListener;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataFormatImpl;
+import javax.imageio.metadata.IIOMetadataNode;
+import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
+import javax.imageio.plugins.jpeg.JPEGQTable;
 import javax.imageio.spi.IIORegistry;
 import javax.imageio.spi.ImageReaderSpi;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -79,7 +87,8 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
                 new TestData(getClassLoaderResource("/jpeg/cmyk-sample.jpg"), new Dimension(160, 227)),
                 new TestData(getClassLoaderResource("/jpeg/cmyk-sample-multiple-chunk-icc.jpg"), new Dimension(2707, 3804)),
                 new TestData(getClassLoaderResource("/jpeg/jfif-jfxx-thumbnail-olympus-d320l.jpg"), new Dimension(640, 480)),
-                new TestData(getClassLoaderResource("/jpeg/jfif-padded-segments.jpg"), new Dimension(20, 45))
+                new TestData(getClassLoaderResource("/jpeg/jfif-padded-segments.jpg"), new Dimension(20, 45)),
+                new TestData(getClassLoaderResource("/jpeg/0x00-to-0xFF-between-segments.jpg"), new Dimension(16, 16))
         );
 
         // More test data in specific tests below
@@ -100,7 +109,6 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         }
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     protected Class<JPEGImageReader> getReaderClass() {
         return JPEGImageReader.class;
@@ -323,6 +331,51 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
     }
 
     @Test
+    public void testYCbCrNotSubsampledNonstandardChannelIndexes() throws IOException {
+        // Regression: Make sure 3 channel, non-subsampled JFIF, defaults to YCbCr, even if unstandard channel indexes
+        JPEGImageReader reader = createReader();
+        reader.setInput(ImageIO.createImageInputStream(getClassLoaderResource("/jpeg/jfif-ycbcr-no-subsampling-intel.jpg")));
+
+        assertEquals(600, reader.getWidth(0));
+        assertEquals(600, reader.getHeight(0));
+
+        ImageReadParam param = reader.getDefaultReadParam();
+        param.setSourceRegion(new Rectangle(8, 8));
+
+        BufferedImage image = reader.read(0, param);
+
+        assertNotNull(image);
+        assertEquals(8, image.getWidth());
+        assertEquals(8, image.getHeight());
+
+        // QnD test: Make sure all pixels are white (if treated as RGB, they will be pink-ish)
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                assertEquals(0xffffff, image.getRGB(x, y) & 0xffffff);
+            }
+        }
+    }
+
+    @Test
+    public void testCorbisRGB() throws IOException {
+        // Special case, throws exception below without special treatment
+        // java.awt.color.CMMException: General CMM error517
+        JPEGImageReader reader = createReader();
+        reader.setInput(ImageIO.createImageInputStream(getClassLoaderResource("/jpeg/cmm-exception-corbis-rgb.jpg")));
+
+        assertEquals(512, reader.getWidth(0));
+        assertEquals(384, reader.getHeight(0));
+
+        BufferedImage image = reader.read(0);
+
+        assertNotNull(image);
+        assertEquals(512, image.getWidth());
+        assertEquals(384, image.getHeight());
+
+        reader.dispose();
+   }
+
+    @Test
     public void testHasThumbnailNoIFD1() throws IOException {
         JPEGImageReader reader = createReader();
         reader.setInput(ImageIO.createImageInputStream(getClassLoaderResource("/jpeg/srgb-exif-no-ifd1.jpg")));
@@ -460,9 +513,7 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         // Validate strip colors
         for (int i = 0; i < strip.getWidth() / 128; i++) {
             int actualRGB = strip.getRGB(i * 128, 4);
-            assertEquals((actualRGB >> 16) & 0xff, (expectedRGB[i] >> 16) & 0xff, 5);
-            assertEquals((actualRGB >> 8) & 0xff, (expectedRGB[i] >> 8) & 0xff, 5);
-            assertEquals((actualRGB) & 0xff, (expectedRGB[i]) & 0xff, 5);
+            assertRGBEquals(expectedRGB[i], actualRGB);
         }
     }
 
@@ -490,9 +541,7 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         // Validate strip colors
         for (int i = 0; i < thumbnail.getWidth() / 8; i++) {
             int actualRGB = thumbnail.getRGB(i * 8, 4);
-            assertEquals((actualRGB >> 16) & 0xff, (expectedRGB[i] >> 16) & 0xff, 5);
-            assertEquals((actualRGB >> 8) & 0xff, (expectedRGB[i] >> 8) & 0xff, 5);
-            assertEquals((actualRGB) & 0xff, (expectedRGB[i]) & 0xff, 5);
+            assertRGBEquals(expectedRGB[i], actualRGB);
         }
     }
 
@@ -601,7 +650,44 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         reader.dispose();
     }
 
+    @Test
+    public void testReadNoJFIFYCbCr() throws IOException {
+        // Basically the same issue as http://stackoverflow.com/questions/9340569/jpeg-image-with-wrong-colors
+        JPEGImageReader reader = createReader();
+        reader.setInput(ImageIO.createImageInputStream(getClassLoaderResource("/jpeg/no-jfif-ycbcr.jpg")));
 
+        assertEquals(310, reader.getWidth(0));
+        assertEquals(206, reader.getHeight(0));
+
+        ImageReadParam param = reader.getDefaultReadParam();
+        param.setSourceRegion(new Rectangle(0, 0, 310, 8));
+        BufferedImage image = reader.read(0, param);
+        assertNotNull(image);
+        assertEquals(310, image.getWidth());
+        assertEquals(8, image.getHeight());
+
+        int[] expectedRGB = new int[] {
+                0xff3c1b14, 0xff35140b, 0xff4b2920, 0xff3b160e, 0xff49231a, 0xff874e3d, 0xff563d27, 0xff926c61,
+                0xff350005, 0xff84432d, 0xff754f46, 0xff2c2223, 0xff422016, 0xff220f0b, 0xff251812, 0xff1c1209,
+                0xff483429, 0xff1b140c, 0xff231c16, 0xff2f261f, 0xff2e2923, 0xff170c08, 0xff383025, 0xff443b34,
+                0xff574a39, 0xff3b322b, 0xffeee1d0, 0xffebdecd, 0xffe9dccb, 0xffe8dbca, 0xffe7dcca,
+        };
+
+        // Validate strip colors
+        for (int i = 0; i < image.getWidth() / 10; i++) {
+            int actualRGB = image.getRGB(i * 10, 7);
+            assertRGBEquals(expectedRGB[i], actualRGB);
+        }
+    }
+
+    /**
+     * Slightly fuzzy RGB equals method. Tolerance +/-5 steps.
+     */
+    private void assertRGBEquals(int expectedRGB, int actualRGB) {
+        assertEquals((expectedRGB >> 16) & 0xff, (actualRGB >> 16) & 0xff, 5);
+        assertEquals((expectedRGB >>  8) & 0xff, (actualRGB >>  8) & 0xff, 5);
+        assertEquals((expectedRGB      ) & 0xff, (actualRGB      ) & 0xff, 5);
+    }
 
     // Regression: Test subsampling offset within  of bounds
     // NOTE: These tests assumes the reader will read at least 1024 scanlines (if available) each iteration,
@@ -633,11 +719,10 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         assertNotNull(image);
 
         // Make sure correct color is actually read, not just left empty
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2) & 0xffffff);
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1) & 0xffffff);
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2));
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1));
     }
 
-    @Ignore
     @Test
     public void testReadSubsamplingBounds1027() throws IOException {
         JPEGImageReader reader = createReader();
@@ -651,11 +736,10 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         assertNotNull(image);
 
         // Make sure correct color is actually read, not just left empty
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2) & 0xffffff);
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1) & 0xffffff);
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2));
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1));
     }
 
-    @Ignore
     @Test
     public void testReadSubsamplingBounds1026() throws IOException {
         JPEGImageReader reader = createReader();
@@ -669,8 +753,8 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         assertNotNull(image);
 
         // Make sure correct color is actually read, not just left empty
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2) & 0xffffff);
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1) & 0xffffff);
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2));
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1));
     }
 
     @Test
@@ -700,11 +784,10 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         assertNotNull(image);
 
         // Make sure correct color is actually read, not just left empty
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2) & 0xffffff);
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1) & 0xffffff);
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2));
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1));
     }
 
-    @Ignore
     @Test
     public void testReadSubsamplingBounds1024() throws IOException {
         JPEGImageReader reader = createReader();
@@ -718,29 +801,26 @@ public class JPEGImageReaderTest extends ImageReaderAbstractTestCase<JPEGImageRe
         assertNotNull(image);
 
         // Make sure correct color is actually read, not just left empty
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2) & 0xffffff);
-        assertEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1) & 0xffffff);
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 2));
+        assertRGBEquals(0xfefefd, image.getRGB(0, image.getHeight() - 1));
+    }
+
+    @Test
+    public void testXDensityOutOfRangeIssue() throws IOException {
+        // Image has JFIF with x/y density 0
+        JPEGImageReader reader = createReader();
+        reader.setInput(ImageIO.createImageInputStream(getClassLoaderResource("/jpeg/xdensity-out-of-range-zero.jpg")));
+
+        IIOMetadata imageMetadata = reader.getImageMetadata(0);
+        assertNotNull(imageMetadata);
+
+        // Assume that the aspect ratio is 1 if both x/y density is 0.
+        IIOMetadataNode tree = (IIOMetadataNode) imageMetadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
+        NodeList dimensions = tree.getElementsByTagName("Dimension");
+        assertEquals(1, dimensions.getLength());
+        assertEquals("PixelAspectRatio", dimensions.item(0).getFirstChild().getNodeName());
+        assertEquals("1.0", ((Element) dimensions.item(0).getFirstChild()).getAttribute("value"));
     }
 
     // TODO: Test RGBA/YCbCrA handling
-
-    @Test
-    public void testReadMetadataMaybeNull() throws IOException {
-        // Just test that we can read the metadata without exceptions
-        JPEGImageReader reader = createReader();
-
-        for (TestData testData : getTestData()) {
-            reader.setInput(testData.getInputStream());
-
-            for (int i = 0; i < reader.getNumImages(true); i++) {
-                try {
-                    IIOMetadata metadata = reader.getImageMetadata(i);
-                    assertNotNull(String.format("Image metadata null for %s image %s", testData, i), metadata);
-                }
-                catch (IIOException e) {
-                    System.err.println(String.format("WARNING: Reading metadata failed for %s image %s: %s", testData, i, e.getMessage()));
-                }
-            }
-        }
-    }
 }

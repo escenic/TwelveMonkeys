@@ -46,6 +46,8 @@ final class EXIFEntry extends AbstractEntry {
         if (type < 1 || type > TIFF.TYPE_NAMES.length) {
             throw new IllegalArgumentException(String.format("Illegal EXIF type: %s", type));
         }
+
+        // TODO: Validate that type is applicable to value?
         
         this.type = type;
     }
@@ -88,10 +90,12 @@ final class EXIFEntry extends AbstractEntry {
                 return "StripOffsets";
             case TIFF.TAG_ORIENTATION:
                 return "Orientation";
-            case TIFF.TAG_SAMPLES_PER_PIXELS:
+            case TIFF.TAG_SAMPLES_PER_PIXEL:
                 return "SamplesPerPixels";
             case TIFF.TAG_ROWS_PER_STRIP:
                 return "RowsPerStrip";
+            case TIFF.TAG_STRIP_BYTE_COUNTS:
+                return "StripByteCounts";
             case TIFF.TAG_X_RESOLUTION:
                 return "XResolution";
             case TIFF.TAG_Y_RESOLUTION:
@@ -116,6 +120,16 @@ final class EXIFEntry extends AbstractEntry {
                 return "Artist";
             case TIFF.TAG_HOST_COMPUTER:
                 return "HostComputer";
+            case TIFF.TAG_PREDICTOR:
+                return "Predictor";
+            case TIFF.TAG_TILE_WIDTH:
+                return "TileWidth";
+            case TIFF.TAG_TILE_HEIGTH:
+                return "TileHeight";
+            case TIFF.TAG_TILE_OFFSETS:
+                return "TileOffsets";
+            case TIFF.TAG_TILE_BYTE_COUNTS:
+                return "TileByteCounts";
             case TIFF.TAG_COPYRIGHT:
                 return "Copyright";
             case TIFF.TAG_YCBCR_SUB_SAMPLING:
@@ -209,6 +223,28 @@ final class EXIFEntry extends AbstractEntry {
                 return "PixelYDimension";
 
             // TODO: More field names
+            /*
+            default:
+                Class[] classes = new Class[] {TIFF.class, EXIF.class};
+
+                for (Class cl : classes) {
+                    Field[] fields = cl.getFields();
+
+                    for (Field field : fields) {
+                        try {
+                            if (field.getType() == Integer.TYPE && field.getName().startsWith("TAG_")) {
+                                if (field.get(null).equals(getIdentifier())) {
+                                    return StringUtil.lispToCamel(field.getName().substring(4).replace("_", "-").toLowerCase(), true);
+                                }
+                            }
+                        }
+                        catch (IllegalAccessException e) {
+                            // Should never happen, but in case, abort
+                            break;
+                        }
+                    }
+                }
+            */
         }
 
         return null;
